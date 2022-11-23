@@ -42,7 +42,8 @@ class World:
         self.space[entity] = entry
         self.update_listeners( entity )
 
-    def set(self, entity, data):
+    def setWorld(self, entity, data):
+        print("IN SET WORLD")
         self.space[entity] = data
         self.update_listeners( entity )
 
@@ -60,14 +61,15 @@ class World:
     def world(self):
         return self.space
 
-myWorld = World()        
+myWorld = World()
 
-def set_listener( entity, data ):
-    ''' do something with the update ! '''
+def set_listener(entity, data):
+    '''DO something with the update!'''
 
-myWorld.add_set_listener( set_listener )
+myWorld.add_set_listener(set_listener)
 
 class Client:
+
     def __init__(self):
         self.queue = queue.Queue()
 
@@ -91,7 +93,9 @@ def read_ws(ws,client):
             print("WS RECV: %s" % msg)
             if (msg is not None):
                 packet = json.loads(msg)
-                client.put(json.dumps(packet))
+                myWorld.setWorld(packet["entity"], packet["data"])
+                for client in clients:
+                    client.put(json.dumps(myWorld.world()))
     except:
         '''Done'''
 
@@ -109,12 +113,14 @@ def subscribe_socket(ws):
     try:
         while True:
             # block here
+            # ws.send(json.dumps(myWorld.world()))
+            # ws.send(json.dumps(msg))
             msg = client.get()
             ws.send(msg)
+            # time.sleep(1)
     except Exception as e:  # WebSocketError as e:
         print("WS Error %s" % e)
     finally:
-        clients.remove(client)
         gevent.kill(g)
 
 
