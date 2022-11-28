@@ -123,7 +123,15 @@ function getPosition(e) {
 
 function addEntity(entity, data) {
     world[entity] = data;
-    drawNextFrame(); // (but should we?)
+    socket.send(JSON.stringify({"entity":entity, "data":data}))
+    // fetch('/entity/' + entity, {
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/json',
+    //         'Accept': 'application/json'
+    //     },
+    //     body: JSON.stringify(data)
+    // }).then((response)=> {console.log(response.json)})
     //XXX: Send a XHTML Request that updates the entity you just modified!
 }
 var counter = 0;
@@ -254,10 +262,13 @@ function wsSetup() {
     socket = new WebSocket(url);
     socket.onopen = function() {
         //XXX: TODO What are you going to do here?
+        //fetch the world once
         fetch('/world')
-        .then(function(response) { 
-            world = response.json;
-            console.log("GOT RESPONSE! World is: ", world);
+        .then((response) => { 
+            return response.json();
+        })
+        .then((data) => {
+            world = data; drawNextFrame();
         })
     };
     socket.onerror = function(msg) {
@@ -265,9 +276,17 @@ function wsSetup() {
     };
     socket.onmessage = function(msg) {  
         try {
-            debug("WebSocket Recv:" + msg.data);
+            // debug("WebSocket Recv:" + msg.data);
             //XXX: TODO What are you going to do here?   
-            cobnsole.log(msg.data)         
+            response = JSON.parse(msg.data)
+            world[response["entity"]] = response["data"]
+            drawNextFrame()
+            // if (JSON.parse(msg.data) != world) {
+            //     world = JSON.parse(msg.data)
+            //     console.log(world)
+            //     drawNextFrame()
+            // }
+
         } catch (e) {
             alert("socket on message: " + e);
         }
