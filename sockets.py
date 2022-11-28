@@ -90,12 +90,16 @@ def read_ws(ws,client):
     try:
         while True:
             msg = ws.receive()
-            print("WS RECV: %s" % msg)
+            print("WS RECV IN SERVER: %s" % msg)
             if (msg is not None):
                 packet = json.loads(msg)
-                myWorld.setWorld(packet["entity"], packet["data"])
+                if ("entity" in packet and "data" in packet):
+                    myWorld.setWorld(packet["entity"], packet["data"])
                 for client in clients:
-                    client.put(json.dumps({packet["entity"] : packet["data"]}))
+
+                    client.put(json.dumps(packet))
+            else:
+                break
     except:
         '''Done'''
 
@@ -121,6 +125,7 @@ def subscribe_socket(ws):
     except Exception as e:  # WebSocketError as e:
         print("WS Error %s" % e)
     finally:
+        clients.remove(client)
         gevent.kill(g)
 
 
