@@ -262,6 +262,7 @@ function wsSetup() {
     socket = new WebSocket(url);
     socket.onopen = function() {
         //XXX: TODO What are you going to do here?
+        //fetch the world once
         drawNextFrame()
     };
     socket.onerror = function(msg) {
@@ -271,11 +272,17 @@ function wsSetup() {
         try {
             // debug("WebSocket Recv:" + msg.data);
             //XXX: TODO What are you going to do here?   
-            if (JSON.parse(msg.data) != world) {
-                world = JSON.parse(msg.data)
-                console.log(world)
-                drawNextFrame()
+            response = JSON.parse(msg.data)
+            for (var entity in response) {
+                console.log("THIS IS THE ENTITY: ", response[entity])
+                world[entity] = response[entity]
             }
+            drawNextFrame()
+            // if (JSON.parse(msg.data) != world) {
+            //     world = JSON.parse(msg.data)
+            //     console.log(world)
+            //     drawNextFrame()
+            // }
 
         } catch (e) {
             alert("socket on message: " + e);

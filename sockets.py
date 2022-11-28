@@ -95,7 +95,7 @@ def read_ws(ws,client):
                 packet = json.loads(msg)
                 myWorld.setWorld(packet["entity"], packet["data"])
                 for client in clients:
-                    client.put(json.dumps(myWorld.world()))
+                    client.put(json.dumps({packet["entity"] : packet["data"]}))
     except:
         '''Done'''
 
