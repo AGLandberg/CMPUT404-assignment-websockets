@@ -44,19 +44,72 @@ debug("Test");
 
 world = {};
 
+// Drawing a star: 
+// URL: https://stackoverflow.com/questions/25837158/how-to-draw-a-star-by-using-canvas-html5
+// Author: markE and Andrei Volgin
+function drawStar(context, entity){
+    var step=Math.PI/10;
+    var cx = entity["x"]
+    var cy = entity["y"]
+    var rot=Math.PI/2*3;
+    with(context) {
+        for (let j=1; j <= 2; j++) {
+            beginPath();
+            moveTo(cx,cy-30);
+            radius = entity["radius"] / j;
+            for(i=0;i<10;i++){
+                x=cx+Math.cos(rot)*radius;
+                y=cy+Math.sin(rot)*radius;
+                lineTo(x,y);
+                rot+=step;
+
+                x=cx+Math.cos(rot)*(radius/2);
+                y=cy+Math.sin(rot)*(radius/2);
+                lineTo(x,y);
+                rot+=step;
+            }
+            lineTo(cx,cy-30);
+            closePath();
+            lineWidth=5;
+            strokeStyle=entity["colour"];
+            stroke();
+            fillStyle="black";
+            fill();
+        }
+        
+    }
+}
+
 //XXX: TODO Make this prettier!
 function drawCircle(context,entity) {
     with(context) {
-        beginPath();                
-        lineWidth = 3;
+        beginPath();                 
+        lineWidth = 5;
+        inner = 5;
+        outer = 10;
         var x = entity["x"];
         var y = entity["y"];
-        //moveTo(x,y);
-        fillStyle = entity["colour"];
+        radius = entity["radius"];
+
+        var gradient = context.createRadialGradient(x, y, inner, x, y, outer);
+        gradient.addColorStop(0, 'black');
+        gradient.addColorStop(1, entity["colour"]);
+        fillStyle = gradient;
         strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
+        arc(x, y, (entity["radius"])?entity["radius"]:5, 0, 2.0 * Math.PI, false);  
+        stroke();  
+        fill();                              
     }
+}
+
+//Use drawShape to determine if circle or star should be drawn.
+function drawShape(context, entity) {
+
+if (entity['shape'] === 'star') {
+    drawStar(context, entity);
+} else {
+    drawCircle(context, entity);
+}
 }
 
 function prepEntity(entity) {
@@ -83,7 +136,7 @@ function renderFrame() {
     clearFrame();
     for (var key in world) {
         var entity = world[key];
-        drawCircle(context,prepEntity(entity));
+        drawShape(context,prepEntity(entity));
     }
 }
 
@@ -236,18 +289,26 @@ mouse = (function() {
     return self;
 })();
 
+colours = ["pink","#EEA47FFF", "#FFBC83","#F96167","#FCE77D", "#FBEAEB","#FF69B4", "#EE4E34"]
+index = 1
+window.setInterval(
+     function () {
+         index++;
+         colour = colours[index % 4];
+     }, 1000/30);
+
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x,'y':y,'colour':colour, 'shape':'star', radius:30});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+    addEntityWithoutName({'x':x,'y':y,'colour':colour, 'shape':'star', radius:30});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
+    addEntityWithoutName({'x':x,'y':y,'colour':colour, 'shape':'circle',
                           'radius':10});
 });
 
@@ -261,8 +322,6 @@ function wsSetup() {
     var url = "ws://"+ host +"/subscribe"; 
     socket = new WebSocket(url);
     socket.onopen = function() {
-        //XXX: TODO What are you going to do here?
-        //fetch the world once
         fetch('/world')
         .then((response) => { 
             return response.json();
@@ -277,16 +336,9 @@ function wsSetup() {
     socket.onmessage = function(msg) {  
         try {
             // debug("WebSocket Recv:" + msg.data);
-            //XXX: TODO What are you going to do here?   
             response = JSON.parse(msg.data)
             world[response["entity"]] = response["data"]
             drawNextFrame()
-            // if (JSON.parse(msg.data) != world) {
-            //     world = JSON.parse(msg.data)
-            //     console.log(world)
-            //     drawNextFrame()
-            // }
-
         } catch (e) {
             alert("socket on message: " + e);
         }
